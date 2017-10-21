@@ -254,21 +254,19 @@ class TimeRE(dict):
         regex syntax are escaped.
 
         """
-        processed_format = ''
         # The sub() call escapes all characters that might be misconstrued
         # as regex syntax.  Cannot use re.escape since we have to deal with
         # format directives (%m, etc.).
         regex_chars = re_compile(r"([\\.^$*+?\(\){}\[\]|])")
         format = regex_chars.sub(r"\\\1", format)
+
         whitespace_replacement = re_compile(r'\s+')
         format = whitespace_replacement.sub(r'\\s+', format)
-        while '%' in format:
-            directive_index = format.index('%')+1
-            processed_format = "%s%s%s" % (processed_format,
-                                           format[:directive_index-1],
-                                           self[format[directive_index]])
-            format = format[directive_index+1:]
-        return "%s%s" % (processed_format, format)
+
+        directive = re_compile(r"%(%|[^A-Za-z%]*[A-Za-z])")
+        process = lambda m: self.get(m.group(1), m.group(1))
+        format = directive.sub(process, format)
+        return format
 
     def compile(self, format):
         """Return a compiled re object for the format string."""
@@ -359,7 +357,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     found = format_regex.match(data_string)
     if not found:
         raise ValueError("time data %r does not match format %r" %
-                         (data_string, format))
+                         (data_string, format)) from None
     if len(data_string) != found.end():
         raise ValueError("unconverted data remains: %s" %
                           data_string[found.end():])
