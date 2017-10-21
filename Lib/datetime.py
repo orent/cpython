@@ -2260,6 +2260,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
 
 try:
+    import NO_C_EXTENSION_MODULE
     from _datetime import *
 except ImportError:
     pass
