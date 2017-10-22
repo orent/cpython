@@ -1709,6 +1709,14 @@ class datetime(date):
         "Convert to string, for str()."
         return self.isoformat(sep=' ')
 
+    _default_format = '%Y-%m-%d %H:%M:%S%.f%:z'
+
+    @classmethod
+    def isoparse(cls, date_string):
+        'string -> new datetime parsed from a string.'
+        import _strptime
+        return _strptime._strptime_datetime(cls, date_string, cls._default_format)
+
     @classmethod
     def strptime(cls, date_string, format):
         'string, format -> new datetime parsed from a string (like time.strptime()).'
