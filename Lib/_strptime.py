@@ -213,7 +213,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z':  r"(?:(?P<z>[+-])(?P<zhh>\d\d)(?P<zmm>[0-5]\d))",
+            'z':  r"(?:(?P<z>[+-])(?P<zhh>\d\d):?(?P<zmm>[0-5]\d))",
             ':z': r"(?:(?P<z>[+-])(?P<zhh>\d\d):(?P<zmm>[0-5]\d))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
