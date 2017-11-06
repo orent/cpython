@@ -901,7 +901,9 @@ server. Platform_version is a 3-tuple containing a version number that is\n\
 intended for identifying the OS rather than feature detection."
 );
 
-static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
+static PyTypeObject WindowsVersionType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+};
 
 static PyStructSequence_Field windows_version_fields[] = {
     {"major", "Major version number"},
