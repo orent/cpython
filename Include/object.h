@@ -115,7 +115,7 @@ typedef struct {
 } PyVarObject;
 
 #define Py_LREFCNT(ob)          (((PyObject*)(ob))->ob_refcnt)
-#define Py_REFCNT(ob)           Py_LREFCNT(ob)
+#define Py_REFCNT(ob)           (0+Py_LREFCNT(ob))
 #define Py_SET_REFCNT(ob, cnt)  (Py_LREFCNT(ob) = cnt)
 #define Py_BUMP_REFCNT(ob, by)  (Py_LREFCNT(ob) += by)
 #define Py_DECREF_RAW(ob)       (--Py_LREFCNT(ob))
@@ -127,14 +127,19 @@ typedef struct {
 /********************* String Literals ****************************************/
 /* This structure helps managing static strings. The basic usage goes like this:
    Instead of doing
+
        r = PyObject_CallMethod(o, "foo", "args", ...);
+
    do
+
        _Py_IDENTIFIER(foo);
        ...
        r = _PyObject_CallMethodId(o, &PyId_foo, "args", ...);
+
    PyId_foo is a static variable, either on block level or file level. On first
    usage, the string "foo" is interned, and the structures are linked. On interpreter
    shutdown, all strings are released (through _PyUnicode_ClearStaticStrings).
+
    Alternatively, _Py_static_string allows choosing the variable name.
    _PyUnicode_FromId returns a borrowed reference to the interned string.
    _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
