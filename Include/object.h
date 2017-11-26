@@ -114,7 +114,12 @@ typedef struct {
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
-#define Py_REFCNT(ob)           (((PyObject*)(ob))->ob_refcnt)
+#define Py_LREFCNT(ob)          (((PyObject*)(ob))->ob_refcnt)
+#define Py_REFCNT(ob)           Py_LREFCNT(ob)
+#define Py_SET_REFCNT(ob, cnt)  (Py_LREFCNT(ob) = cnt)
+#define Py_BUMP_REFCNT(ob, by)  (Py_LREFCNT(ob) += by)
+#define Py_DECREF_RAW(ob)       (--Py_LREFCNT(ob))
+#define Py_INCREF_RAW(ob)       (Py_LREFCNT(ob)++)
 #define Py_TYPE(ob)             (((PyObject*)(ob))->ob_type)
 #define Py_SIZE(ob)             (((PyVarObject*)(ob))->ob_size)
 
@@ -122,19 +127,14 @@ typedef struct {
 /********************* String Literals ****************************************/
 /* This structure helps managing static strings. The basic usage goes like this:
    Instead of doing
-
        r = PyObject_CallMethod(o, "foo", "args", ...);
-
    do
-
        _Py_IDENTIFIER(foo);
        ...
        r = _PyObject_CallMethodId(o, &PyId_foo, "args", ...);
-
    PyId_foo is a static variable, either on block level or file level. On first
    usage, the string "foo" is interned, and the structures are linked. On interpreter
    shutdown, all strings are released (through _PyUnicode_ClearStaticStrings).
-
    Alternatively, _Py_static_string allows choosing the variable name.
    _PyUnicode_FromId returns a borrowed reference to the interned string.
    _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
@@ -767,7 +767,7 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 #define _Py_NewReference(op) (                          \
     _Py_INC_TPALLOCS(op) _Py_COUNT_ALLOCS_COMMA         \
     _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA               \
-    (Py_REFCNT(op) = 1))
+    Py_SET_REFCNT(op, 1))
 
 #define _Py_ForgetReference(op) _Py_INC_TPFREES(op)
 
@@ -782,13 +782,13 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 #define Py_INCREF(op) (                         \
     _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
-    (Py_REFCNT(op)++), (void)0 )
+    Py_INCREF_RAW(op), (void)0 )
 
 #define Py_DECREF(op)                                   \
     do {                                                \
         PyObject *_py_decref_tmp = (PyObject *)(op);    \
         if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
-        (--Py_REFCNT(_py_decref_tmp)) != 0)             \
+        Py_DECREF_RAW(_py_decref_tmp) != 0)             \
             _Py_CHECK_REFCNT(_py_decref_tmp)            \
         else                                            \
             _Py_Dealloc(_py_decref_tmp);                \

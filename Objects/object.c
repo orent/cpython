@@ -309,7 +309,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
         Py_FatalError("PyObject_CallFinalizerFromDealloc called on "
                       "object with a non-zero refcount");
     }
-    Py_REFCNT(self) = 1;
+    Py_SET_REFCNT(self, 1);
 
     PyObject_CallFinalizer(self);
 
@@ -317,7 +317,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
      * cause a recursive call.
      */
     assert(Py_REFCNT(self) > 0);
-    if ((--Py_REFCNT(self)) == 0)
+    if (Py_DECREF_RAW(self) == 0)
         return 0;         /* this is the normal path out */
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
@@ -325,7 +325,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
      */
     refcnt = Py_REFCNT(self);
     _Py_NewReference(self);
-    Py_REFCNT(self) = refcnt;
+    Py_SET_REFCNT(self, refcnt);
 
     if (PyType_IS_GC(Py_TYPE(self))) {
         assert(_PyGC_REFS(self) != _PyGC_REFS_UNTRACKED);
@@ -1741,7 +1741,7 @@ void
 _Py_NewReference(PyObject *op)
 {
     _Py_INC_REFTOTAL;
-    Py_REFCNT(op) = 1;
+    Py_SET_REFCNT(op, 1);
     _Py_AddToAllObjects(op, 1);
     _Py_INC_TPALLOCS(op);
 }
