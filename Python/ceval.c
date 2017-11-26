@@ -10,7 +10,7 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
-
+#include "object.h"
 #include "code.h"
 #include "dictobject.h"
 #include "frameobject.h"

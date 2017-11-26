@@ -901,9 +901,7 @@ server. Platform_version is a 3-tuple containing a version number that is\n\
 intended for identifying the OS rather than feature detection."
 );
 
-static PyTypeObject WindowsVersionType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-};
+static PyTypeObject WindowsVersionType = { PyVarObject_HEAD_INIT(NULL, 0) };
 
 static PyStructSequence_Field windows_version_fields[] = {
     {"major", "Major version number"},
@@ -1158,7 +1156,7 @@ Return the size of object in bytes.");
 static PyObject *
 sys_getrefcount(PyObject *self, PyObject *arg)
 {
-    return PyLong_FromSsize_t(arg->ob_refcnt);
+    return PyLong_FromSsize_t(Py_REFCNT(arg));
 }
 
 #ifdef Py_REF_DEBUG
