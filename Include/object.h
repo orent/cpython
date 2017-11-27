@@ -84,7 +84,7 @@ whose size is determined when the object is allocated.
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
-    {1}, type },
+    {0}, type },
 
 #define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_INIT(type) size },
@@ -105,7 +105,7 @@ whose size is determined when the object is allocated.
  */
 
 typedef struct {
-    Py_ssize_t cnt1;
+    Py_ssize_t cnt0;
 } Py_refcnt_t;
 
 //typedef Py_ssize_t Py_refcnt_t;
@@ -121,12 +121,12 @@ typedef struct {
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
-#define Py_LREFCNT(ob)          (((PyObject*)(ob))->ob_refcnt.cnt1)
-#define Py_REFCNT(ob)           (0+Py_LREFCNT(ob))
-#define Py_SET_REFCNT(ob, cnt)  (Py_LREFCNT(ob) = cnt)
-#define Py_BUMP_REFCNT(ob, by)  (Py_LREFCNT(ob) += by)
-#define Py_DECREF_RAW(ob)       (--Py_LREFCNT(ob))
-#define Py_INCREF_RAW(ob)       (Py_LREFCNT(ob)++)
+#define Py_LREFCNT0(ob)         (((PyObject*)(ob))->ob_refcnt.cnt0)
+#define Py_REFCNT(ob)           (1+Py_LREFCNT0(ob))
+#define Py_SET_REFCNT(ob, cnt)  (Py_LREFCNT0(ob) = (cnt)-1 )
+#define Py_BUMP_REFCNT(ob, by)  (Py_LREFCNT0(ob) += by)
+#define Py_DECREF_RAW(ob)       (--Py_LREFCNT0(ob)+1)
+#define Py_INCREF_RAW(ob)       (Py_LREFCNT0(ob)++)
 #define Py_TYPE(ob)             (((PyObject*)(ob))->ob_type)
 #define Py_SIZE(ob)             (((PyVarObject*)(ob))->ob_size)
 
