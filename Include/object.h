@@ -84,7 +84,7 @@ whose size is determined when the object is allocated.
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
-    1, type },
+    {1}, type },
 
 #define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_INIT(type) size },
@@ -103,9 +103,16 @@ whose size is determined when the object is allocated.
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
+
+typedef struct {
+    Py_ssize_t cnt1;
+} Py_refcnt_t;
+
+//typedef Py_ssize_t Py_refcnt_t;
+
 typedef struct _object {
     _PyObject_HEAD_EXTRA
-    Py_ssize_t ob_refcnt;
+    Py_refcnt_t ob_refcnt;
     struct _typeobject *ob_type;
 } PyObject;
 
@@ -114,7 +121,7 @@ typedef struct {
     Py_ssize_t ob_size; /* Number of items in variable part */
 } PyVarObject;
 
-#define Py_LREFCNT(ob)          (((PyObject*)(ob))->ob_refcnt)
+#define Py_LREFCNT(ob)          (((PyObject*)(ob))->ob_refcnt.cnt1)
 #define Py_REFCNT(ob)           (0+Py_LREFCNT(ob))
 #define Py_SET_REFCNT(ob, cnt)  (Py_LREFCNT(ob) = cnt)
 #define Py_BUMP_REFCNT(ob, by)  (Py_LREFCNT(ob) += by)
