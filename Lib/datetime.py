@@ -885,6 +885,20 @@ class date:
             raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
     @classmethod
+    def fromrfc2822format(cls, date_string):
+        """Parse timestamp format used by many protocols e.g. SMTP, HTTP """
+        from email.utils import _parsedate_tz
+        tup = _parsedate_tz(date_string)
+        if not tup:
+            raise ValueError('not a valid RFC2822 timestamp')
+        args = tup[:6]
+        tzoffset = tup[9]
+        tz = None
+        if tzoffset is not None:
+            tz = timezone(timedelta(seconds=tzoffset))
+        return cls(*args, tzinfo=tz)
+
+    @classmethod
     def fromisocalendar(cls, year, week, day):
         """Construct a date from the ISO year, week number and weekday.
 
@@ -974,6 +988,20 @@ class date:
         return "%04d-%02d-%02d" % (self._year, self._month, self._day)
 
     __str__ = isoformat
+
+    def rfc2822format(self):
+        if self.utcoffset() is None:
+            raise ValueError('RFC 2822 timestamp requires timezone offset')
+        # Day and month names must always be in English (RFC 1123). The %a, %b
+        # conversions in strftime honor locale.
+        day_name = (
+            'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[self.weekday()]
+        month_name = (
+            '',
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')[self.month]
+
+        return self.strftime("{}, %d {} %Y %H:%M:%S %z".format(day_name, month_name))
 
     # Read-only field accessors
     @property
