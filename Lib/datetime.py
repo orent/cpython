@@ -439,8 +439,14 @@ def _check_time_fields(hour, minute, second, microsecond, fold):
     return hour, minute, second, microsecond, fold
 
 def _check_tzinfo_arg(tz):
+    if isinstance(tz, str):
+        if tz not in timezone._bystr:
+             dummy = _parse_isoformat_time('00:00:00' + tz)
+        tz = timezone._bystr[tz]
+
     if tz is not None and not isinstance(tz, tzinfo):
         raise TypeError("tzinfo argument must be None or of a tzinfo subclass")
+    return tz
 
 def _cmperror(x, y):
     raise TypeError("can't compare '%s' to '%s'" % (
@@ -1289,7 +1295,7 @@ class time:
             return self
         hour, minute, second, microsecond, fold = _check_time_fields(
             hour, minute, second, microsecond, fold)
-        _check_tzinfo_arg(tzinfo)
+        tzinfo = _check_tzinfo_arg(tzinfo)
         self = object.__new__(cls)
         self._hour = hour
         self._minute = minute
@@ -1613,7 +1619,7 @@ class datetime(date):
         year, month, day = _check_date_fields(year, month, day)
         hour, minute, second, microsecond, fold = _check_time_fields(
             hour, minute, second, microsecond, fold)
-        _check_tzinfo_arg(tzinfo)
+        tzinfo = _check_tzinfo_arg(tzinfo)
         if not cls._allow_naive and tzinfo is None:
             raise ValueError("timezone-aware datetime requires tzinfo")
         self = object.__new__(cls)
@@ -1709,7 +1715,7 @@ class datetime(date):
 
         A timezone info object may be passed in as well.
         """
-        _check_tzinfo_arg(tz)
+        tz = _check_tzinfo_arg(tz)
 
         return cls._fromtimestamp(t, tz is not None, tz)
 
@@ -1884,10 +1890,9 @@ class datetime(date):
         return timezone(timedelta(seconds=gmtoff), zone)
 
     def astimezone(self, tz=None):
+        tz = _check_tzinfo_arg(tz)
         if tz is None:
             tz = self._local_timezone()
-        elif not isinstance(tz, tzinfo):
-            raise TypeError("tz argument must be an instance of tzinfo")
 
         mytz = self.tzinfo
         if mytz is None:
@@ -2233,7 +2238,13 @@ def _isoweek1monday(year):
 
 
 class timezone(tzinfo):
-    __slots__ = '_offset', '_name'
+    __slots__ = '_offset', '_name', '__weakref__'
+
+    import weakref
+    _byofs = weakref.WeakValueDictionary()
+    _bystr = weakref.WeakValueDictionary()
+    del weakref
+    _keepalive = []
 
     # Sentinel value to disallow None
     _Omitted = object()
@@ -2241,8 +2252,9 @@ class timezone(tzinfo):
         if not isinstance(offset, timedelta):
             raise TypeError("offset must be a timedelta")
         if name is cls._Omitted:
-            if not offset:
-                return cls.utc
+            interned = cls._byofs.get(offset)
+            if interned is not None:
+                return interned
             name = None
         elif not isinstance(name, str):
             raise TypeError("name must be a string")
@@ -2257,6 +2269,12 @@ class timezone(tzinfo):
         self = tzinfo.__new__(cls)
         self._offset = offset
         self._name = name
+        if name is None:
+            cls._byofs[offset] = self
+            cls._bystr[_format_offset(offset)] = self
+            cls._keepalive.append(self)
+            if len(cls._keepalive) > 100:
+                cls._keepalive[:] = []
         return self
 
     def __getinitargs__(self):
