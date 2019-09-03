@@ -1590,6 +1590,7 @@ class datetime(date):
     instance of a tzinfo subclass. The remaining arguments may be ints.
     """
     __slots__ = date.__slots__ + time.__slots__
+    _allow_naive = True
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0):
@@ -1613,6 +1614,8 @@ class datetime(date):
         hour, minute, second, microsecond, fold = _check_time_fields(
             hour, minute, second, microsecond, fold)
         _check_tzinfo_arg(tzinfo)
+        if not cls._allow_naive and tzinfo is None:
+            raise ValueError("timezone-aware datetime requires tzinfo")
         self = object.__new__(cls)
         self._year = year
         self._month = month
@@ -2191,6 +2194,31 @@ datetime.min = datetime(1, 1, 1)
 datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999)
 datetime.resolution = timedelta(microseconds=1)
 
+class adatetime(datetime):
+    """datetime(year, month, day[, hour[, minute[, second[, microsecond]]]], tzinfo)
+
+    A timezone-aware datetime. The tzinfo arg may not be None.
+    """
+    __slots__ = ()
+    _allow_naive = False
+
+    @classmethod
+    def utcfromtimestamp(cls, t):
+        """Construct an aware UTC datetime from a POSIX timestamp."""
+        return cls.fromtimestamp(t, timezone.utc)
+
+    @classmethod
+    def fromtimestamp(cls, t, tz=None):
+        """Construct aware local datetime from a POSIX timestamp (like time.time()).
+
+        If tz not supplied, defaults to static offset in local timezone.
+        """
+        if tz is None:
+            isdst = _time.localtime(t).tm_isdst
+            ofs = _time.altzone if isdst else _time.timezone
+            tz = timezone(timedelta(seconds=-ofs))
+        return cls._fromtimestamp(t, True, tz)
+
 
 def _isoweek1monday(year):
     # Helper to calculate the day number of the Monday starting week 1
@@ -2525,7 +2553,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
 
 try:
-    from _datetime import *
+    from _datetimeX import *
 except ImportError:
     pass
 else:
