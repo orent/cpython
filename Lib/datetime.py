@@ -1439,7 +1439,10 @@ class time:
                                 self._hour, self._minute, s)
         if self._tzinfo is not None:
             assert s[-1:] == ")"
-            s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
+            tz = self._tzinfo
+            if type(tz) is timezone and tz._name is None:
+                tz = _format_offset(tz._offset)
+            s = s[:-1] + ", tzinfo=%r" % tz + ")"
         if self._fold:
             assert s[-1:] == ")"
             s = s[:-1] + ", fold=1)"
@@ -1964,7 +1967,10 @@ class datetime(date):
                            ", ".join(map(str, L)))
         if self._tzinfo is not None:
             assert s[-1:] == ")"
-            s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
+            tz = self._tzinfo
+            if type(tz) is timezone and tz._name is None:
+                tz = _format_offset(tz._offset)
+            s = s[:-1] + ", tzinfo=%r" % tz + ")"
         if self._fold:
             assert s[-1:] == ")"
             s = s[:-1] + ", fold=1)"
