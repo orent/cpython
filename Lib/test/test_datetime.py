@@ -17,6 +17,9 @@ finally:
         sys.modules.pop(modname, None)
 test_modules = [pure_tests, fast_tests]
 test_suffixes = ["_Pure", "_Fast"]
+
+del test_suffixes[-1]
+del test_modules[-1]
 # XXX(gb) First run all the _Pure tests, then all the _Fast tests.  You might
 # not believe this, but in spite of all the sys.modules trickery running a _Pure
 # test last will leave a mix of pure and native datetime stuff lying around.
